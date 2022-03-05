@@ -129,11 +129,6 @@ def calc_bce_loss(start, end, scores):
 
 
 def forward_one_epoch(net, clips, targets, scores=None, training=True, ssl=True, mode = 'clf'):
-    #clips = clips.cuda()
-    # print(clips.shape)
-    # print(targets)
-    # print(scores)
-    # input()
     targets = [t.cuda() for t in targets]
 
     if training:
@@ -141,12 +136,6 @@ def forward_one_epoch(net, clips, targets, scores=None, training=True, ssl=True,
             output_dict = net(clips, proposals=targets, ssl=ssl, mode = 'clf')
         else:
             output_dict = net(clips, ssl=False, mode = 'clf')
-            # print(output_dict['prop_loc'])
-            # print(output_dict['prop_loc'].shape)
-            # input()
-            # print(output_dict['center'])
-            # print(output_dict['center'].shape)
-            # input()
 
     else:
         with torch.no_grad():
@@ -161,16 +150,6 @@ def forward_one_epoch(net, clips, targets, scores=None, training=True, ssl=True,
         trip_loss = torch.stack(loss_).sum(0)
         return trip_loss
     else:
-        # print(output_dict['loc'].size(), output_dict['conf'].size(),
-        #      output_dict['prop_loc'].size(), output_dict['prop_conf'].size(),
-        #      output_dict['center'].size(), output_dict['priors'].size())
-        # input()
-        # print("sssssssssssssssssssssssssssssssssssssssss")
-        # print(output_dict['loc'].size(), output_dict['conf'].size(),
-        #      output_dict['prop_loc'].size(), output_dict['prop_conf'].size(),
-        #      output_dict['center'].size(), output_dict['priors'].size())
-        # print(targets)
-        # input()
         loss_l, loss_c, loss_prop_l, loss_prop_c, loss_ct = CPD_Loss(
             [output_dict['loc'], output_dict['conf'],
              output_dict['prop_loc'], output_dict['prop_conf'],
@@ -178,7 +157,6 @@ def forward_one_epoch(net, clips, targets, scores=None, training=True, ssl=True,
             targets)
         loss_start, loss_end = calc_bce_loss(output_dict['start'], output_dict['end'], scores)
         scores_ = F.interpolate(scores, scale_factor=1.0 / 4)
-        #print(output_dict['start_loc_prop'].size(),output_dict['end_loc_prop'].size(),scores_.size())
         loss_start_loc_prop, loss_end_loc_prop = calc_bce_loss(output_dict['start_loc_prop'],
                                                                output_dict['end_loc_prop'],
                                                                scores_)
@@ -218,17 +196,6 @@ def run_one_epoch(epoch, net, optimizer, cvae, optimizer_cvae, data_loader, epoc
     with tqdm.tqdm(data_loader, total=epoch_step_num, ncols=0) as pbar:
         for n_iter, (clips, targets, scores, ssl_clips, ssl_targets, flags) in enumerate(pbar):
 
-            # print(scores)
-            # score_re = []
-            # for kk in scores :
-            #     print(kk)
-            #     if kk == 0:
-            #         score_re.append(1)
-            #     if kk == 1:
-            #         score_re.append(0)
-            # score_re = torch.tensor(score_re)
-            # print(score_re)
-            # input()
             global GLOBAL_M 
             GLOBAL_M = GLOBAL_M +1
             loss_4f, loss_5c = 0, 0
@@ -254,8 +221,6 @@ def run_one_epoch(epoch, net, optimizer, cvae, optimizer_cvae, data_loader, epoc
 
 
     for name, param in net.named_parameters():
-        # if name[:15] == "module.backbone" or name[:15] == "module.coarse_p":
-        #     continue
         param.requires_grad = True
         param.grad = None
 
@@ -278,19 +243,9 @@ def run_one_epoch(epoch, net, optimizer, cvae, optimizer_cvae, data_loader, epoc
             feature_4f = video_feature['Mixed_4f']
             attention_5c = attention_5c.unsqueeze(-1).unsqueeze(-1)
             attention_4f = attention_4f.unsqueeze(-1).unsqueeze(-1)
-            # print(feature_5c.size(), attention_5c.size())
-            # print(targets)
-            # print(attention_5c.size())
-            # # for name, param in net.named_parameters():
-            # #     print(name)
-            # print(net.module.coarse_pyramid_detection.conf_head.conv1d.weight.size())
-            # input()
        
 
             feature_fg_5c = (feature_5c * attention_5c)/(attention_5c.sum())
-            # print(feature_fg_5c.size())
-            # # print(clips.size(), video_feature['Mixed_5c'].size())
-            # input()
             feature_bg_5c = (feature_5c * (1 - attention_5c)) / ((1 - attention_5c).sum())
             feature_fg_5c = feature_fg_5c
             feature_bg_5c = feature_bg_5c
@@ -309,23 +264,11 @@ def run_one_epoch(epoch, net, optimizer, cvae, optimizer_cvae, data_loader, epoc
 
             result = []
             for t in targets:
-                # print(t)
                 new_targets=t.cpu().numpy()
-                # print(new_targets)
-                # input()
                 new_targets = interval(new_targets)
                 new_targets = torch.tensor(new_targets).cuda()
                 result.append(new_targets)
 
-            # score_re = []
-            # for kk in scores :
-            #     if kk == 0:
-            #         score_re.append(1)
-            #     if kk == 1:
-            #         score_re.append(0) 
-            # print(scores)
-            # print(score_re)
-            #score_re = torch.tensor(score_re)
             feat_dict['Mixed_5c'] = feature_bg_5c
             feat_dict['Mixed_4f'] = feature_bg_4f
             loss_l_bg, loss_c_bg, loss_prop_l_bg, loss_prop_c_bg, loss_ct_bg, loss_start_bg, loss_end_bg = forward_one_epoch(
@@ -346,24 +289,6 @@ def run_one_epoch(epoch, net, optimizer, cvae, optimizer_cvae, data_loader, epoc
             loss_ct_bg = loss_ct_bg * config['training']['cw']
             cost_bg = loss_l_bg + loss_c_bg  # + loss_prop_l_bg + loss_prop_c_bg + loss_ct_bg 
 
-            # if cost_bg > 1e-2:
-            #     lr_bg = 10
-            # elif cost_bg > 1e-3:
-            #     lr_bg = 100 
-            # elif cost_bg > 1e-4:
-            #     lr_bg = 1000
-            # elif cost_bg > 1e-5:
-            #     lr_bg = 10000
-            # elif cost_bg > 1e-6:
-            #     lr_bg = 100000
-            # else:
-            #     lr_bg = 1000000
-            # lr_bg = min(epoch, max_epoch) * 15
-            # lr_bg = cost_bg * 1e7
-            # while True:
-            #     lr_bg = lr_bg/10.0
-            #     if lr_bg < 1:
-            #         break 
 
             cost = cost_bg * 35 + cost_fg
             # cost = cost_bg * 0.03 + cost_fg
@@ -385,9 +310,6 @@ def run_one_epoch(epoch, net, optimizer, cvae, optimizer_cvae, data_loader, epoc
                 # print(feature_5c.size(), attention_5c.size())
 
                 ssl_feature_fg_5c = (ssl_feature_5c * ssl_attention_5c)/(ssl_attention_5c.sum())
-                # print(feature_fg_5c.size())
-                # # print(clips.size(), video_feature['Mixed_5c'].size())
-                # input()
                 
                 ssl_feature_fg_5c = ssl_feature_fg_5c
                 
@@ -407,15 +329,9 @@ def run_one_epoch(epoch, net, optimizer, cvae, optimizer_cvae, data_loader, epoc
                 
 
             l_recon_4f, l_recon_5c = 0, 0
-            # print(attention_4f.size(),attention_5c.size())
-            # input()
             recon_feature_4f = cvae('inference',att = attention_4f)
-            # print(recon_feature_4f.size(),video_feature['Mixed_4f'].permute(0, 2, 3, 4, 1).view(1 , -1, 832).size())
-            # input()
             l_recon_4f += (recon_feature_4f-video_feature['Mixed_4f']).pow(2).mean()
             recon_feature_5c = cvae('inference',att = attention_5c)
-            # print(type(recon_feature_5c),type(video_feature['Mixed_5c']))
-            # input()
             l_recon_5c += (recon_feature_5c-video_feature['Mixed_5c']).pow(2).mean()
 
             l_recon = l_recon_4f + l_recon_5c
@@ -473,12 +389,8 @@ if __name__ == '__main__':
     net = BDNet(in_channels=config['model']['in_channels'],
                 backbone_model=config['model']['backbone_model'])
     net = nn.DataParallel(net, device_ids=gpu_id).cuda()
-    # print(net)
     cvae = CVAE()
     cvae = nn.DataParallel(cvae, device_ids=gpu_id).cuda()
-    # print(cvae)
-    # input()
-
     """
     Setup optimizer
     """
@@ -486,7 +398,6 @@ if __name__ == '__main__':
                                  lr=learning_rate,
                                  betas=(0.9, 0.999),
                                  weight_decay=weight_decay)
-    #optimizer = torch.optim.SGD(net.parameters(),lr=0.01,momentum=0.9)
     """
     Setup loss
     """
@@ -512,7 +423,6 @@ if __name__ == '__main__':
     optimizer_cvae = torch.optim.Adam(cvae.parameters(),
                                  lr=0.001,
                                  betas=(0.8, 0.999))  
-    #optimizer_cvae = torch.optim.SGD(cvae.parameters(),lr=0.01,momentum=0.9)
     """
     Setup loss
     """

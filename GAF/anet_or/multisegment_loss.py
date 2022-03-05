@@ -43,21 +43,11 @@ class FocalLoss_Ori(nn.Module):
     def forward(self, logit, target):
 
         if logit.dim() > 2:
-            # N,C,d1,d2 -> N,C,m (m=d1*d2*...)
             logit = logit.view(logit.size(0), logit.size(1), -1)
             logit = logit.transpose(1, 2).contiguous()  # [N,C,d1*d2..] -> [N,d1*d2..,C]
             logit = logit.view(-1, logit.size(-1))  # [N,d1*d2..,C]-> [N*d1*d2..,C]
         target = target.view(-1, 1)  # [N,d1,d2,...]->[N*d1*d2*...,1]
 
-        # -----------legacy way------------
-        #  idx = target.cpu().long()
-        # one_hot_key = torch.FloatTensor(target.size(0), self.num_class).zero_()
-        # one_hot_key = one_hot_key.scatter_(1, idx, 1)
-        # if one_hot_key.device != logit.device:
-        #     one_hot_key = one_hot_key.to(logit.device)
-        # pt = (one_hot_key * logit).sum(1) + epsilon
-
-        # ----------memory saving way--------
         pt = logit.gather(1, target).view(-1) + self.eps  # avoid apply
         logpt = pt.log()
 
@@ -224,7 +214,6 @@ class MultiSegmentLoss(nn.Module):
                     max_iou, max_iou_idx = iou[conf > 0].max(0)
                 else:
                     max_iou = 2.0
-                # print(max_iou)
                 prop_conf = conf.clone()
                 prop_conf[iou < min(self.overlap_thresh, max_iou)] = 0
                 prop_conf_t[:] = prop_conf
@@ -292,7 +281,6 @@ class MultiSegmentLoss(nn.Module):
             loss_prop_c_list.append(loss_prop_c)
             loss_ct_list.append(loss_ct)
 
-        # print(N, num_neg.sum())
         loss_l = sum(loss_l_list) / num_batch
         loss_c = sum(loss_c_list) / num_batch
         loss_ct = sum(loss_ct_list) / num_batch

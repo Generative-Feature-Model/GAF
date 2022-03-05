@@ -160,7 +160,6 @@ class ANET_Dataset(Dataset):
         regions = list(
             filter(lambda x: x not in annos and math.floor(x[1]) - math.ceil(x[0]) > min_action,
                    regions))
-        # regions = list(filter(lambda x:x not in annos, regions))
         region = random.choice(regions)
         return [math.ceil(region[0]), math.floor(region[1])]
 
@@ -219,7 +218,6 @@ class ANET_Dataset(Dataset):
         frame_num = sample_info['frame_num']
         th = int(self.th[sample_info['video_name']] / 4)
         data = np.load(os.path.join(self.video_dir, video_name + '.npy'))
-        # print(dir(data))
         start = offset
         end = min(offset + self.clip_length, frame_num)
         frames = data[start: end]

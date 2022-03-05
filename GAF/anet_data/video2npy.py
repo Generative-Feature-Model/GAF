@@ -3,8 +3,6 @@ import multiprocessing as mp
 import argparse
 import cv2
 import numpy as np
-# from numpy.random import f
-# from torch import imag
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--thread_num', type=int,default=32)
@@ -35,11 +33,7 @@ def sub_processor(pid, files):
         imgs = []
         while True:
             ret, frame = cap.read()
-            # print(file_name)
-            # print(len(frame))
             if count == len(imgs):
-                # print(file_name)
-                # print(len(frame))
                 print(file_name)
                 print(len(imgs))
                 break

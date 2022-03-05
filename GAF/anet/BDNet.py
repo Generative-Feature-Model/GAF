@@ -534,10 +534,7 @@ class CDecoder(nn.Module):
         x = self.fc3(x)
         x = x.permute(0, 2, 1)
         x = x.unsqueeze(-1).unsqueeze(-1)
-        # print(x.size())
         x = self.deconv(x)
-        # print(x.size())
-        # input()
 
         return x
 
@@ -567,10 +564,7 @@ class CVAE(nn.Module):
             att = att.squeeze(-1).squeeze(-1)
             att = att.permute(0, 2 ,1)
             if att.size(-1) == 1024:
-                # att = att.view(-1, 288)
                 z = torch.randn(*att.shape, device='cuda') + att
-                # print(z.size())
-                # input()
                 att = att.permute(0, 2 ,1)
                 recon_x = self.cdecoder(z, att)
       

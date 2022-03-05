@@ -36,7 +36,6 @@ class I3D_BackBone(nn.Module):
     def train(self, mode=True):
         super(I3D_BackBone, self).train(mode)
         if self._freeze_bn and mode:
-            # print('freeze all BatchNorm3d in I3D backbone.')
             for name, m in self._model.named_modules():
                 if isinstance(m, nn.BatchNorm3d):
                     # print('freeze {}.'.format(name))
@@ -66,7 +65,6 @@ class ProposalBranch(nn.Module):
                    output_channels=proposal_channels,
                    kernel_shape=1,
                    activation_fn=None),
-            # nn.InstanceNorm1d(proposal_channels),
             nn.GroupNorm(32, proposal_channels),
             nn.ReLU(inplace=True)
         )
@@ -75,7 +73,6 @@ class ProposalBranch(nn.Module):
                    output_channels=proposal_channels * 2,
                    kernel_shape=1,
                    activation_fn=None),
-            # nn.InstanceNorm1d(proposal_channels * 2),
             nn.GroupNorm(32, proposal_channels * 2),
             nn.ReLU(inplace=True)
         )
@@ -87,7 +84,6 @@ class ProposalBranch(nn.Module):
                    output_channels=proposal_channels,
                    kernel_shape=1,
                    activation_fn=None),
-            # nn.InstanceNorm1d(proposal_channels * 2),
             nn.GroupNorm(32, proposal_channels),
             nn.ReLU(inplace=True)
         )
@@ -106,7 +102,6 @@ class ProposalBranch(nn.Module):
     def forward(self, feature, frame_level_feature, segments, frame_segments):
         fm_short = self.cur_point_conv(feature)
         feature = self.lr_conv(feature)
-        # prop_feature = feature
         prop_feature = self.boundary_max_pooling(feature, segments)
         prop_roi_feature = self.boundary_max_pooling(frame_level_feature, frame_segments)
         prop_roi_feature = self.roi_conv(prop_roi_feature)
@@ -259,7 +254,6 @@ class CoarsePyramid(nn.Module):
         x1 = feat_dict['Mixed_5c']
         print(x1.size())
         input()
-        # x1 = feat_dict['Mixed_4f']
         batch_num = x1.size(0)
         for i, conv in enumerate(self.pyramids):
             if i == 0:
@@ -267,9 +261,7 @@ class CoarsePyramid(nn.Module):
                 x = x.squeeze(-1).squeeze(-1)
             else:
                 x = conv(x)
-            # print(x.size())
             pyramid_feats.append(x)
-        # input()
 
         frame_level_feat = pyramid_feats[0].unsqueeze(-1)
         frame_level_feat = F.interpolate(frame_level_feat, [self.frame_num, 1]).squeeze(-1)
@@ -281,8 +273,6 @@ class CoarsePyramid(nn.Module):
         end = end_feat.permute(0, 2, 1).contiguous()
 
         for i, feat in enumerate(pyramid_feats):
-            # prior = torch.Tensor([[(c + 0.5) / t] for c in range(t)]).view(-1, 1).to(feat.device)
-            # priors.append(prior)
             loc_feat = self.loc_tower(feat)
             conf_feat = self.conf_tower(feat)
             locs.append(
@@ -397,7 +387,6 @@ class BDNet(nn.Module):
     def reset_params(self):
         for i, m in enumerate(self.modules()):
             self.weight_init(m)
-        # Initialization
         for modules in [
             self.coarse_pyramid_detection.loc_tower, self.coarse_pyramid_detection.conf_tower,
             self.coarse_pyramid_detection.loc_head, self.coarse_pyramid_detection.conf_head,
@@ -429,7 +418,6 @@ class BDNet(nn.Module):
             anchor, positive, negative = [], [], []
             for i in range(3):
                 bound_feat = self.boundary_max_pooling(top_feat[i], frame_segments / self.scales[i])
-                # for triplet loss
                 ndim = bound_feat.size(1) // 2
                 anchor.append(bound_feat[:, ndim:, 0])
                 positive.append(bound_feat[:, :ndim, 1])

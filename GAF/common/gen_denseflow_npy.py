@@ -59,11 +59,9 @@ def gen_flow_npy_with_sample(video_info_path, video_flow_img_path, output_dir, n
 
         while len(flows) < sample_count:
             flows.append(flows[-1])
-        # print(len(flows), sample_count)
         assert len(flows) == sample_count
         flows = np.stack(flows, axis=0)
         assert flows.dtype == np.uint8
-        # print(flows.shape)
         np.save(npy_path, flows)
 
 
@@ -77,7 +75,6 @@ def gen_flow_image(video_info_path, video_data_path, output_dir):
 
         imgs = np.load(npy_path)
         imgs = imgs[:, :, :, ::-1]  # convert RGB to BGR
-        # gray_imgs = []
         for i in range(imgs.shape[0]):
             im = imgs[i]
             cv2.imwrite(os.path.join(video_name, '%05d.jpg' % (i + 1)), im)
@@ -101,7 +98,6 @@ def gen_flow_npy(video_info_path, video_flow_img_path, output_dir):
             flows.append(flow)
         flows.append(flows[-1])
         flows = np.stack(flows, axis=0)
-        # print(flows.shape, flows.dtype)
         np.save(npy_path, flows)
 
 

@@ -71,9 +71,6 @@ def split_videos(video_infos,
                  video_annos,
                  clip_length=config['dataset']['training']['clip_length'],
                  stride=config['dataset']['training']['clip_stride']):
-    # video_infos = get_video_info(config['dataset']['training']['video_info_path'])
-    # video_annos = get_video_anno(video_infos,
-    #                              config['dataset']['training']['video_anno_path'])
     training_list = []
     min_anno_dict = {}
     for video_name in video_annos.keys():
@@ -156,7 +153,6 @@ class THUMOS_Dataset(Dataset):
             clip_length,
             stride
         )
-        # np.random.shuffle(self.training_list)
         self.data_dict = data_dict
         self.clip_length = clip_length
         self.crop_size = crop_size
@@ -181,7 +177,6 @@ class THUMOS_Dataset(Dataset):
         regions = [[times[i], times[i + 1]] for i in range(len(times) - 1)]
         regions = list(filter(
             lambda x: x not in annos and math.floor(x[1]) - math.ceil(x[0]) > min_action, regions))
-        # regions = list(filter(lambda x:x not in annos, regions))
         region = random.choice(regions)
         return [math.ceil(region[0]), math.floor(region[1])]
 
@@ -192,7 +187,6 @@ class THUMOS_Dataset(Dataset):
         '''
         try:
             gt = random.choice(list(filter(lambda x: x[1] - x[0] > 2 * th, annos)))
-            # gt = random.choice(annos)
         except IndexError:
             return input, annos, False
         gt_len = gt[1] - gt[0]
@@ -208,24 +202,16 @@ class THUMOS_Dataset(Dataset):
         end_idx = start_idx + th
 
         new_input = input.clone()
-        # annos.remove(gt)
         if gt[1] < start_idx:
             new_input[:, t:t + th, ] = input[:, start_idx:end_idx, ]
             new_input[:, t + th:end_idx, ] = input[:, t:start_idx, ]
 
             new_annos = [[gt[0], t], [t + th, th + gt[1]], [t + 1, t + th - 1]]
-            # new_annos = [[t-math.ceil(th/5), t+math.ceil(th/5)],
-            #            [t+th-math.ceil(th/5), t+th+math.ceil(th/5)],
-            #            [t+1, t+th-1]]
-
         else:
             new_input[:, start_idx:t - th] = input[:, end_idx:t, ]
             new_input[:, t - th:t, ] = input[:, start_idx:end_idx, ]
 
             new_annos = [[gt[0] - th, t - th], [t, gt[1]], [t - th + 1, t - 1]]
-            # new_annos = [[t-th-math.ceil(th/5), t-th+math.ceil(th/5)],
-            #            [t-math.ceil(th/5), t+math.ceil(th/5)],
-            #            [t-th+1, t-1]]
 
         return new_input, new_annos, True
 
@@ -243,7 +229,6 @@ class THUMOS_Dataset(Dataset):
         offset = sample_info['offset']
         annos = sample_info['annos']
         th = self.th[sample_info['video_name']]
-        # print(sample_info['video_name'])
 
         input_data = video_data[:, offset: offset + self.clip_length]
         c, t, h, w = input_data.shape

@@ -160,8 +160,6 @@ class CoarsePyramid(nn.Module):
 
         loc_towers = []
         for i in range(2):
-            # print(out_channels)
-            # input()
             loc_towers.append(
                 nn.Sequential(
                     Unit1D(
@@ -269,69 +267,32 @@ class CoarsePyramid(nn.Module):
         x2 = feat_dict['Mixed_5c']
         x1 = feat_dict['Mixed_4f']
         batch_num = x1.size(0)
-        # print(self.parameters)
-        # print(x2.size())
-        # input()
         for i, conv in enumerate(self.pyramids):
             if i == 0:
                 x = conv(x1)
-                # print(conv)
-                # print(x1.size())
-                # print("x1",x.size())
                 x = x.squeeze(-1).squeeze(-1)
-                # input()
             elif i == 1:
                 x = conv(x2)
-                # print(conv)
-                # print("x2",x2.size())
-                # # input()
-                # print(x.size())
-                # input()
                 x = x.squeeze(-1).squeeze(-1)
                 x0 = pyramid_feats[-1]
-                # print(x0.size())
-                # print(x.size())
-                
-                # input()
                 y = F.interpolate(x, x0.size()[2:], mode='nearest')
                 pyramid_feats[-1] = x0 + y
             else:
-                # print(conv)
-                # print(x.size())
                 x = conv(x) 
                 
-                # input()
-            
-            
-            # print("pyr", x.size())
             pyramid_feats.append(x)
-        # input()
-        # print(pyramid_feats[0].size())
         frame_level_feat = pyramid_feats[0].unsqueeze(-1)
-        # print(frame_level_feat.size())
         frame_level_feat = F.interpolate(frame_level_feat, [self.frame_num, 1]).squeeze(-1)
-        # print(frame_level_feat.size())
         frame_level_feat = self.deconv(frame_level_feat)
-        # print(frame_level_feat.size())
         trip.append(frame_level_feat.clone())
         start_feat = frame_level_feat[:, :256]
-        # print(start_feat.size())
         end_feat = frame_level_feat[:, 256:]
-        # print(end_feat.size())
         start = start_feat.permute(0, 2, 1).contiguous()
-        # print(start.size())
         end = end_feat.permute(0, 2, 1).contiguous()
-        # print(end.size())
-        # input()
 
         for i, feat in enumerate(pyramid_feats):
             loc_feat = self.loc_tower(feat)
             conf_feat = self.conf_tower(feat)
-            # print("conf_feat",conf_feat.size())
-            # print(self.conf_head)
-            # print(self.conf_head(conf_feat).size())
-            # input()
-
             locs.append(
                 self.loc_heads[i](self.loc_head(loc_feat))
                     .view(batch_num, 2, -1)
@@ -404,8 +365,6 @@ class CoarsePyramid(nn.Module):
         prop_conf = torch.cat([o.view(batch_num, -1, num_classes) for o in prop_confs], 1)
         center = torch.cat([o.view(batch_num, -1, 1) for o in centers], 1)
         priors = torch.cat(self.priors, 0).to(loc.device)
-        # print(conf,conf.size())
-        # input()
         return loc, conf, prop_loc, prop_conf, center, priors, start, end, \
                start_loc_prop, end_loc_prop, start_conf_prop, end_conf_prop
 
@@ -501,7 +460,6 @@ class BDNet(nn.Module):
         if mode == 'clf':
             feat_dict = x
             if ssl:
-                # print(feat_dict)
                 top_feat = self.coarse_pyramid_detection(feat_dict, ssl)
                 decoded_segments = proposals[0].unsqueeze(0)
                 plen = decoded_segments[:, :, 1:] - decoded_segments[:, :, :1] + 1.0
@@ -544,31 +502,12 @@ class BDNet(nn.Module):
         if mode == 'att':
             feature_5c = x['Mixed_5c']
             feature_4f = x['Mixed_4f']
-            # print(feature_4f.size(),feature_5c.size())
-            # input()
-            # feature_5c = feature_5c.view(1, -1, 1024)
-            #feature_4f = feature_4f.view(1, -1, 832)
             feature_5c = self.deconv1(feature_5c)
-            #feature_5c = self.sample(feature_5c)
-            # print(x['Mixed_5c'].size(),feature_5c.size())
-            # input()
-            # x = torch.cat([x['Mixed_5c'],feature_5c])
-            # print(x.size())
-            # input()
             feature_5c = feature_5c.squeeze(-1)
-            # print(feature_5c.size())
             feature_5c = F.interpolate(feature_5c, [1024, 1]).squeeze(-1)
             feature_4f = self.deconv2(feature_4f)
-            # print(feature_5c.size())
-            # input()
             feature_4f = feature_4f.squeeze(-1)
-            # print(feature_5c.size())
             feature_4f = F.interpolate(feature_4f, [832, 1]).squeeze(-1)
-            # print(feature_5c.size())
-            # input()
-            # print(self.Att_Head(feature_5c).size())
-            # print(self.Att_Head(feature_4f).size())
-            # input()
 
             return self.Att_Head_5c(feature_5c) ,self.Att_Head_4f(feature_4f)
 
@@ -599,12 +538,8 @@ class CEncoder_832(nn.Module):
     def forward(self, x, att):
         x = self.con2(x)
         x = x.squeeze(-1).squeeze(-1)
-        # print(x.size())
-        # print(att.size())
         x = torch.cat([x,att],dim=1) ##### feature dim
         x = x.permute(0, 2, 1)
-        # att = att.view(-1, 2304, 1)  # [batch_size, seg_num, 1]
-        # x = torch.cat([x, att], dim=-1)
         x = self.fc1(x)
         x = self.relu1(x)
         x = self.fc2(x)
@@ -642,7 +577,6 @@ class CDecoder_832(nn.Module):
         x = self.fc3(x)
         x = x.permute(0, 2, 1)
         x = x.unsqueeze(-1).unsqueeze(-1)
-        # print(x.size())
         x = self.deconv(x)
 
         return x
@@ -670,24 +604,13 @@ class CEncoder(nn.Module):
         
         x = self.con1(x)
         x = x.squeeze(-1).squeeze(-1)
-        # print(x.size())
-        # print(att.size())
         x = torch.cat([x,att],dim=1) ##### feature dim
         x = x.permute(0, 2, 1)
-        # print(x.size())
-        # input()
-        # att = att.view(-1, 288, 1)  # [batch_size, seg_num, 1]
-        # x = torch.cat([x, att], dim=-1)
-        # print(x.size())
-        # print(att.size())
-        # input()
         x = self.fc1(x)
         x = self.relu1(x)
         x = self.fc2(x)
         x = self.relu2(x)
         x = self.fc3(x)
-        # print(x.size())
-        # input()
 
         return x[:, :, :1024], x[:, :, 1024:]
 
@@ -720,10 +643,7 @@ class CDecoder(nn.Module):
         x = self.fc3(x)
         x = x.permute(0, 2, 1)
         x = x.unsqueeze(-1).unsqueeze(-1)
-        # print(x.size())
         x = self.deconv(x)
-        # print(x.size())
-        # input()
 
         return x
 
@@ -745,14 +665,7 @@ class CVAE(nn.Module):
 
                 std = torch.exp(0.5 * log_var)
                 eps = torch.randn(means.shape, device='cuda')
-                # print(means.size())
-                # print(log_var.size())
-                # print(eps.size())
-                # input()
                 z = means + eps * std
-                # print(z.size())
-                # print(att.size())
-                # input()
 
                 recon_x = self.cdecoder(z, att)
             elif x.size(1) == 832:
@@ -761,9 +674,6 @@ class CVAE(nn.Module):
                 std = torch.exp(0.5 * log_var)
                 eps = torch.randn(means.shape, device='cuda')
                 z = means + eps * std
-                # print(z.size())
-                # print(att.size())
-                # input()
 
                 recon_x = self.cdecoder_832(z, att)
 
@@ -771,53 +681,15 @@ class CVAE(nn.Module):
 
         #######################################################
         elif mode == 'inference':
-            # print("sssssssssssssssssssssssssssssssssssssss",att.size())
-            # input()
             att = att.squeeze(-1).squeeze(-1)
             att = att.permute(0, 2 ,1)
             if att.size(-1) == 1024:
-                # att = att.view(-1, 288)
                 z = torch.randn(*att.shape, device='cuda') + att
-                # print(z.size())
-                # input()
                 att = att.permute(0, 2 ,1)
                 recon_x = self.cdecoder(z, att)
             elif att.size(-1) == 832:
-                # att = att.view(-1, 2304)
-                # print(att.size())
-                # print(torch.randn(*att.shape, device='cuda').size())
-                # input()
                 z = torch.randn(*att.shape, device='cuda') + att
-                # print(z.size())
                 att = att.permute(0, 2 ,1)
                 recon_x = self.cdecoder_832(z, att)
 
             return recon_x
-
-
-
-# def test_inference(repeats=3, clip_frames=256):
-#     model = BDNet(training=False)
-#     model.eval()
-#     model.cuda()
-#     import time
-#     run_times = []
-#     x = torch.randn([1, 3, clip_frames, 96, 96]).cuda()
-#     warmup_times = 2
-#     for i in range(repeats + warmup_times):
-#         torch.cuda.synchronize()
-#         start = time.time()
-#         with torch.no_grad():
-#             y = model(x)
-#         torch.cuda.synchronize()
-#         run_times.append(time.time() - start)
-
-#     infer_time = np.mean(run_times[warmup_times:])
-#     infer_fps = clip_frames * (1. / infer_time)
-#     print('inference time (ms):', infer_time * 1000)
-#     print('infer_fps:', int(infer_fps))
-#     # print(y['loc'].size(), y['conf'].size(), y['priors'].size())
-
-
-# if __name__ == '__main__':
-#     test_inference(20, 256)

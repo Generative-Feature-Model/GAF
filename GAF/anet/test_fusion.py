@@ -136,7 +136,6 @@ def sub_processor(lock, pid, video_list):
 
                 feat_dict['Mixed_5c'] = feature_5c
                
-                # output_dict = net(feat_dict, mode = 'clf')
 
                 rgb_output_dict = rgb_net(feat_dict, mode = 'clf')
 
@@ -144,7 +143,6 @@ def sub_processor(lock, pid, video_list):
   
                 flow_output_dict = flow_net(flow_video_feature, mode = 'clf')
 
-                # flow_output_dict = flow_net(flow_clip)
 
             loc, conf, priors = rgb_output_dict['loc'], rgb_output_dict['conf'], \
                                 rgb_output_dict['priors'][0]

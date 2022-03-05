@@ -25,8 +25,6 @@ class MaxPool3dSamePadding(nn.MaxPool3d):
         pad_w_b = pad_w - pad_w_f
 
         pad = [pad_w_f, pad_w_b, pad_h_f, pad_h_b, pad_t_f, pad_t_b]
-        # print x.size()
-        # print pad
         x = F.pad(x, pad)
         return super(MaxPool3dSamePadding, self).forward(x)
 

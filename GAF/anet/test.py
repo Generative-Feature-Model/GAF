@@ -121,7 +121,6 @@ def sub_processor(lock, pid, video_list):
                
                 output_dict = net(feat_dict, mode = 'clf')
 
-                # output_dict = net(clip)
 
             loc, conf, priors = output_dict['loc'], output_dict['conf'], output_dict['priors'][0]
             prop_loc, prop_conf = output_dict['prop_loc'], output_dict['prop_conf']

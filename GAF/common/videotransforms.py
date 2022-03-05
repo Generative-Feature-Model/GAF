@@ -51,8 +51,6 @@ class RandomCrop(object):
             tuple: params (i, j, h, w) to be passed to ``crop`` for random crop.
         """
         c, t, h, w = img.shape
-        # print(img.shape)
-        # input()
         th, tw = output_size
         if w == tw and h == th:
             return 0, 0, h, w
@@ -121,7 +119,6 @@ class RandomHorizontalFlip(object):
             seq Images: Randomly flipped seq images.
         """
         if random.random() < self.p:
-            # c x t x h x w
             return np.flip(imgs, axis=3).copy()
         return imgs
 

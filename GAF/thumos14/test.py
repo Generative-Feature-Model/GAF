@@ -91,7 +91,6 @@ if __name__ == '__main__':
             output.append([])
         res = torch.zeros(num_classes, top_k, 3)
 
-        # print(video_name)
         for offset in offsetlist:
             clip = data[:, offset: offset + clip_length]
             clip = clip.float()
@@ -100,7 +99,6 @@ if __name__ == '__main__':
                 flow_clip = flow_data[:, offset: offset + clip_length]
                 flow_clip = flow_clip.float()
                 flow_clip = (flow_clip / 255.0) * 2.0 - 1.0
-            # clip = torch.from_numpy(clip).float()
             if clip.size(1) < clip_length:
                 tmp = torch.zeros([clip.size(0), clip_length - clip.size(1),
                                    96, 96]).float()
@@ -134,7 +132,6 @@ if __name__ == '__main__':
                 if fusion:
                     flow_video_feature = flow_net(flow_clip, mode = 'bone')
                     flow_output_dict = flow_net(flow_video_feature, mode = 'clf')
-                    #flow_output_dict = flow_net(flow_clip)
 
             loc, conf, priors = output_dict['loc'], output_dict['conf'], output_dict['priors']
             prop_loc, prop_conf = output_dict['prop_loc'], output_dict['prop_conf']
@@ -193,17 +190,11 @@ if __name__ == '__main__':
                     continue
                 l_mask = c_mask.unsqueeze(1).expand_as(decoded_segments)
                 segments = decoded_segments[l_mask].view(-1, 2)
-                # decode to original time
-                # segments = (segments * clip_length + offset) / sample_fps
                 segments = (segments + offset) / sample_fps
                 segments = torch.cat([segments, scores.unsqueeze(1)], -1)
 
                 output[cl].append(segments)
-                # np.set_printoptions(precision=3, suppress=True)
-                # print(idx_to_class[cl], tmp.detach().cpu().numpy())
 
-        # # print(output[1][0].size(), output[2][0].size())
-        # print("111",time.time())
         sum_count = 0
         for cl in range(1, num_classes):
             if len(output[cl]) == 0:
@@ -212,7 +203,6 @@ if __name__ == '__main__':
             tmp, count = softnms_v2(tmp, sigma=nms_sigma, top_k=top_k)
             res[cl, :count] = tmp
             sum_count += count
-        # print("222",time.time())
         sum_count = min(sum_count, top_k)
         flt = res.contiguous().view(-1, 3)
         flt = flt.view(num_classes, -1, 3)
@@ -233,7 +223,6 @@ if __name__ == '__main__':
                 proposal_list.append(tmp_proposal)
 
         result_dict[video_name] = proposal_list
-        # print("333",proposal_list)
 
     output_dict = {"version": "THUMOS14", "results": dict(result_dict), "external_data": {}}
 

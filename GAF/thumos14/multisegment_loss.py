@@ -82,19 +82,11 @@ class FocalLoss_Ori(nn.Module):
     def forward(self, logit, target):
 
         if logit.dim() > 2:
-            # N,C,d1,d2 -> N,C,m (m=d1*d2*...)
             logit = logit.view(logit.size(0), logit.size(1), -1)
             logit = logit.transpose(1, 2).contiguous()  # [N,C,d1*d2..] -> [N,d1*d2..,C]
             logit = logit.view(-1, logit.size(-1))  # [N,d1*d2..,C]-> [N*d1*d2..,C]
         target = target.view(-1, 1)  # [N,d1,d2,...]->[N*d1*d2*...,1]
 
-        # -----------legacy way------------
-        #  idx = target.cpu().long()
-        # one_hot_key = torch.FloatTensor(target.size(0), self.num_class).zero_()
-        # one_hot_key = one_hot_key.scatter_(1, idx, 1)
-        # if one_hot_key.device != logit.device:
-        #     one_hot_key = one_hot_key.to(logit.device)
-        # pt = (one_hot_key * logit).sum(1) + epsilon
 
         # ----------memory saving way--------
         pt = logit.gather(1, target).view(-1) + self.eps  # avoid apply
@@ -127,13 +119,8 @@ def iou_loss(pred, target, weight=None, loss_type='giou', reduction='none'):
     target_area = target_left + target_right
 
     eps = torch.finfo(torch.float32).eps
-    # print(pred_left.size())#126
-    # print(target_left.size())#378
-    # input()
 
     inter = torch.min(pred_left, target_left) + torch.min(pred_right, target_right)
-    # print(torch.min(pred_left, target_left).size())
-    # input()
     area_union = target_area + pred_area - inter
     ious = inter / area_union.clamp(min=eps)
 
@@ -271,14 +258,9 @@ class MultiSegmentLoss(nn.Module):
         else:
             loss_ct = prop_pre_loc.sum()
 
-        # softmax focal loss
-        # print(conf_data.size())
         conf_p = conf_data.view(-1, num_classes)
-        # print(conf_p.size())
         targets_conf = conf_t.view(-1, 1)
         conf_p = F.softmax(conf_p, dim=1)
-        # print(conf_p.size(),targets_conf.size())
-        # input()
         loss_c = self.focal_loss(conf_p, targets_conf)
 
         prop_conf_p = prop_conf_data.view(-1, num_classes)
@@ -292,5 +274,4 @@ class MultiSegmentLoss(nn.Module):
         loss_prop_l /= PN
         loss_prop_c /= PN
         loss_ct /= N
-        # print(N, num_neg.sum())
         return loss_l, loss_c, loss_prop_l, loss_prop_c, loss_ct

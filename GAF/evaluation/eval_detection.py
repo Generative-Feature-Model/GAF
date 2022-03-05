@@ -1,7 +1,3 @@
-# This code is originally from the official ActivityNet repo
-# https://github.com/activitynet/ActivityNet
-# Small modification from ActivityNet Code
-
 import json
 import numpy as np
 import pandas as pd
@@ -19,7 +15,6 @@ warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 
 class ANETdetection(object):
     GROUND_TRUTH_FIELDS = ['database']
-    # GROUND_TRUTH_FIELDS = ['database', 'taxonomy', 'version']
     PREDICTION_FIELDS = ['results', 'version', 'external_data']
 
     def __init__(self, ground_truth_filename=None, prediction_filename=None,

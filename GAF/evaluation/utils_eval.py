@@ -1,6 +1,3 @@
-# This code is originally from the official ActivityNet repo
-# https://github.com/activitynet/ActivityNet
-
 import json
 import urllib.request
 

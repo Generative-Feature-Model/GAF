@@ -111,7 +111,6 @@ def calc_bce_loss(start, end, scores):
 
 
 def forward_one_epoch(net, clips, targets, scores=None, training=True, ssl=True):
-    # clips = clips.cuda()
     targets = [t.cuda() for t in targets]
 
     if training:
@@ -188,8 +187,6 @@ def run_one_epoch(epoch, net, optimizer, cvae, optimizer_cvae, data_loader, epoc
 
             loss_4f, loss_5c = 0, 0
             loss = 0
-            # print(dir(clips))
-            # input()
             clips = clips.cuda()
             video_feature = net(clips ,mode = 'bone')
    
@@ -197,11 +194,8 @@ def run_one_epoch(epoch, net, optimizer, cvae, optimizer_cvae, data_loader, epoc
  
             means_5c, log_var_5c, z_5c, recon_feature_5c = cvae('forward', video_feature['Mixed_5c'], attention_5c)
    
-##########################     loss , back    ##############################
-            # loss_4f += loss_cvae(recon_feature_4f,video_feature['Mixed_4f'], means_4f, log_var_4f, attention_4f)
             loss_5c += loss_cvae(recon_feature_5c,video_feature['Mixed_5c'], means_5c, log_var_5c, attention_5c)
             loss = loss_5c
-            #loss *= 10
             
             optimizer_cvae.zero_grad()
             loss.backward()
@@ -210,12 +204,9 @@ def run_one_epoch(epoch, net, optimizer, cvae, optimizer_cvae, data_loader, epoc
 
 
     for name, param in net.named_parameters():
-        # if name[:15] == "module.backbone" or name[:15] == "module.coarse_p":
-        #     continue
         param.requires_grad = True
         param.grad = None
 
-        # freeze cvae
     for name, param in cvae.named_parameters():
         param.requires_grad = False
         param.grad = None
@@ -230,21 +221,14 @@ def run_one_epoch(epoch, net, optimizer, cvae, optimizer_cvae, data_loader, epoc
             attention_5c = net(video_feature, mode = 'att')
             
             feature_5c = video_feature['Mixed_5c']
-            # feature_4f = video_feature['Mixed_4f']
             attention_5c = attention_5c.unsqueeze(-1).unsqueeze(-1)
-            # attention_4f = attention_4f.unsqueeze(-1).unsqueeze(-1)
-            # print(feature_5c.size(), attention_5c.size())
 
             feature_fg_5c = (feature_5c * attention_5c)/(attention_5c.sum())
-            # print(feature_fg_5c.size())
-            # # print(clips.size(), video_feature['Mixed_5c'].size())
-            # input()
             feature_bg_5c = (feature_5c * (1 - attention_5c)) / ((1 - attention_5c).sum())
             feature_fg_5c = feature_fg_5c
             feature_bg_5c = feature_bg_5c
 
             feat_dict['Mixed_5c'] = feature_fg_5c
-            # feat_dict['Mixed_4f'] = feature_fg_4f
 
 
             loss_l_fg, loss_c_fg, loss_prop_l_fg, loss_prop_c_fg, loss_ct_fg, loss_start_fg, loss_end_fg= forward_one_epoch(
@@ -252,16 +236,12 @@ def run_one_epoch(epoch, net, optimizer, cvae, optimizer_cvae, data_loader, epoc
 
             result = []
             for t in targets:
-                # print(t)
                 new_targets=t.cpu().numpy()
-                # print(new_targets)
-                # input()
                 new_targets = interval(new_targets)
                 new_targets = torch.tensor(new_targets).cuda()
                 result.append(new_targets)
 
             feat_dict['Mixed_5c'] = feature_bg_5c
-            # feat_dict['Mixed_4f'] = feature_bg_4f
             loss_l_bg, loss_c_bg, loss_prop_l_bg, loss_prop_c_bg, loss_ct_bg, loss_start_bg, loss_end_bg = forward_one_epoch(
                 net, feat_dict, result, scores, training=training, ssl=False)
             
@@ -290,16 +270,13 @@ def run_one_epoch(epoch, net, optimizer, cvae, optimizer_cvae, data_loader, epoc
                     ssl_attention_5c = net(ssl_video_feature, mode = 'att')
                     ssl_feature_5c = ssl_video_feature['Mixed_5c']
               
-                    # ssl_feature_4f = ssl_video_feature['Mixed_4f']
                     ssl_attention_5c = ssl_attention_5c.unsqueeze(-1).unsqueeze(-1)
-                    # ssl_attention_4f = ssl_attention_4f.unsqueeze(-1).unsqueeze(-1)
                     
                     ssl_feature_fg_5c = (ssl_feature_5c * ssl_attention_5c)/(ssl_attention_5c.sum())
                     
                     ssl_feature_fg_5c = ssl_feature_fg_5c
                     
                     feat_dict['Mixed_5c'] = ssl_feature_fg_5c
-                    # feat_dict['Mixed_4f'] = ssl_feature_fg_4f
 
                     loss_trip += forward_one_epoch(net, feat_dict, [ssl_targets[i]], 
                                                    training=training, ssl=True) * config['training']['ssl']

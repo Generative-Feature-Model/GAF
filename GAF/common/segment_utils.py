@@ -44,13 +44,8 @@ def jaccard(segment_a, segment_b):
 
 def match_gt(threshold, truths, priors, variances, labels, loc_t, conf_t, idx):
     overlaps = jaccard(truths, point_form(priors))
-    # print(truths, point_form(priors))
-    # print(overlaps)
-    # [num_gt] best prior for each ground truth
     best_prior_overlap, best_prior_idx = overlaps.max(1)
-    # [num_prior] best ground truth for each prior
     best_truth_overlap, best_truth_idx = overlaps.max(0)
-    # ensure each truth has one best prior
     best_truth_overlap.index_fill_(0, best_prior_idx, 2.0)
     for j in range(best_prior_idx.size(0)):
         best_truth_idx[best_prior_idx[j]] = j
@@ -114,8 +109,6 @@ def nms(segments, overlap=0.5, top_k=1000):
         r = torch.index_select(right, 0, idx)
         l = torch.max(l, left[i])
         r = torch.min(r, right[i])
-        # l = torch.clamp(l, max=left[i])
-        # r = torch.clamp(r, min=right[i])
         inter = torch.clamp(r - l, min=0.0)
 
         rem_areas = torch.index_select(area, 0, idx)
@@ -127,8 +120,6 @@ def nms(segments, overlap=0.5, top_k=1000):
 
 
 def softnms_v2(segments, sigma=0.5, top_k=1000, score_threshold=0.001):
-    # print(segments.size())
-    # print(time.time())
     segments = segments.cpu()
     tstart = segments[:, 0]
     tend = segments[:, 1]
@@ -157,7 +148,6 @@ def softnms_v2(segments, sigma=0.5, top_k=1000, score_threshold=0.001):
         undone_mask[tscore < score_threshold] = False
     count = done_mask.sum()
     segments = torch.stack([tstart[done_mask], tend[done_mask], tscore[done_mask]], -1)
-    # print(time.time())
     return segments, count
 
 
