@@ -1,6 +1,4 @@
-# Generative Attention Model-Based Feature
-
-# Semantics for Temporal Action Detection
+# Generative Attention Model-Based Feature Semantics for Temporal Action Detection
 
 This is an official implementation in PyTorch of GAF. 
 
