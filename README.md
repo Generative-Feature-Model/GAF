@@ -44,22 +44,6 @@ python3 setup.py develop
 1. Unzip the flow npy data to `./datasets/thumos14/validation_flow_npy/` and `./datasets/thumos14/test_flow_npy/`
 
 
-**If you want to generate npy data by yourself, please refer to the following guidelines:**
-
-- **RGB data generation manually:**
-
-1. To construct THUMOS14 RGB npy inputs, please download the THUMOS14 training and testing videos.  
-   Training videos: https://storage.googleapis.com/thumos14_files/TH14_validation_set_mp4.zip  
-   Testing videos: https://storage.googleapis.com/thumos14_files/TH14_Test_set_mp4.zip  
-   (unzip password is `THUMOS14_REGISTERED`)  
-2. Move the training videos to `./datasets/thumos14/validation/` and the testing videos to `./datasets/thumos14/test/`
-3. Run the data processing script: `python3 GAF/common/video2npy.py`
-
-- **Flow data generation manually:**
-
-1. If you should generate flow data manually, firstly install the [denseflow](https://github.com/open-mmlab/denseflow).
-2. Prepare the pre-processed RGB data.
-3. Check and run the script: `python3 GAF/common/gen_denseflow_npy.py`
 
 ### Inference
 
