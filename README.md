@@ -92,4 +92,7 @@ python3 GAF/thumos14/train.py configs/thumos14.yaml --lw=10 --cw=1 --piou=0.5
 python3 GAF/thumos14/train.py configs/thumos14_flow.yaml --lw=10 --cw=1 --piou=0.5
 ```
 
-### 
+### Acknowledgement
+
+
+We borrowed code from [AFSD](https://github.com/TencentYoutuResearch/ActionDetection-AFSD).
